@@ -1,7 +1,7 @@
 from scapy.all import ARP , Ether , srp
 import datetime
 
-def scan_networks(network="172.30.0.0/20"):
+def scan_networks(network="172.20.10.0/28"):
     """Scans the specified networks and returns a list of active devices."""
     print(f"Scanning network: {network}...")
     
