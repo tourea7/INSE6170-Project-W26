@@ -1,0 +1,33 @@
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QWidget
+from PyQt5.QtCore import Qt
+import sys
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Smart IoT Router")
+        self.setMinimumSize(900, 600)
+        
+        # Create tab widget
+        self.tabs = QTabWidget()
+        self.setCentralWidget(self.tabs)
+        
+        # Create empty tabs
+        self.tab_devices = QWidget()
+        self.tab_capture = QWidget()
+        self.tab_firewall = QWidget()
+        self.tab_ips = QWidget()
+        self.tab_logs = QWidget()
+        
+        # Add tabs
+        self.tabs.addTab(self.tab_devices, "Devices")
+        self.tabs.addTab(self.tab_capture, "Packet Capture")
+        self.tabs.addTab(self.tab_firewall, "Firewall")
+        self.tabs.addTab(self.tab_ips, "IPS")
+        self.tabs.addTab(self.tab_logs, "Logs")
+        
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
