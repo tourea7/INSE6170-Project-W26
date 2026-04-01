@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt
 import sys
 from tab_devices import DevicesTab
 from tab_capture import CaptureTab
+from tab_firewall import FirewallTab
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -17,7 +18,7 @@ class MainWindow(QMainWindow):
         # Create empty tabs
         self.tab_devices = DevicesTab()
         self.tab_capture = CaptureTab()
-        self.tab_firewall = QWidget()
+        self.tab_firewall = FirewallTab()
         self.tab_ips = QWidget()
         self.tab_logs = QWidget()
         
