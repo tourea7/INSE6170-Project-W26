@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QWidget
 from PyQt5.QtCore import Qt
 import sys
+from tab_devices import DevicesTab
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -13,7 +14,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.tabs)
         
         # Create empty tabs
-        self.tab_devices = QWidget()
+        self.tab_devices = DevicesTab()
         self.tab_capture = QWidget()
         self.tab_firewall = QWidget()
         self.tab_ips = QWidget()
