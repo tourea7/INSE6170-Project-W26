@@ -85,7 +85,7 @@ class FirewallTab(QWidget):
         self.table.setRowCount(len(rules))
         
         for row, rule in enumerate(rules):
-            self.table.setItem(row, 0, QTableWidgetItem(rule[mac]))
+            self.table.setItem(row, 0, QTableWidgetItem(mac))
             self.table.setItem(row, 1, QTableWidgetItem(rule[0]))
             self.table.setItem(row, 2, QTableWidgetItem(str(rule[1])))
             self.table.setItem(row, 3, QTableWidgetItem(rule[2]))

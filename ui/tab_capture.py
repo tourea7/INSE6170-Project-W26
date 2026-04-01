@@ -43,11 +43,11 @@ class CaptureTab(QWidget):
         layout.addLayout(count_layout)
         
         btn_layout = QHBoxLayout()
-        self.start_buttton = QPushButton("Start Capture")
-        self.start_buttton.clicked.connect(self.start_capture)
+        self.start_button = QPushButton("Start Capture")
+        self.start_button.clicked.connect(self.start_capture)
         self.stop_button = QPushButton("Stop Capture")
         self.stop_button.setEnabled(False)
-        btn_layout.addWidget(self.start_buttton)
+        btn_layout.addWidget(self.start_button)
         btn_layout.addWidget(self.stop_button)
         layout.addLayout(btn_layout)
         
