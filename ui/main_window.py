@@ -5,6 +5,7 @@ from tab_devices import DevicesTab
 from tab_capture import CaptureTab
 from tab_firewall import FirewallTab
 from tab_ips import IPSTab
+from tab_logs import LogsTab
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -21,7 +22,7 @@ class MainWindow(QMainWindow):
         self.tab_capture = CaptureTab()
         self.tab_firewall = FirewallTab()
         self.tab_ips = IPSTab()
-        self.tab_logs = QWidget()
+        self.tab_logs = LogsTab()
         
         # Add tabs
         self.tabs.addTab(self.tab_devices, "Devices")
