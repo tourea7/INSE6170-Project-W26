@@ -1,10 +1,74 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QLabel
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QLabel, QLineEdit
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtWidgets import QDialog, QFormLayout, QDialogButtonBox
 import sys
+import sqlite3
 import os
 
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from core.scanner import scan_networks
+
+class EditDeviceDialog(QDialog):
+    def __init__(self, device_mac, parent=None):
+        super().__init__(parent)
+        self.device_mac = device_mac
+        self.setWindowTitle("Edit Device")
+        self.setMinimumWidth(400)
+        
+        layout = QFormLayout()
+        
+        self.name_input = QLineEdit()
+        self.vendor_input = QLineEdit()
+        self.model_input = QLineEdit()
+        self.version_input = QLineEdit()
+        self.description_input = QLineEdit()
+        
+        layout.addRow("Name:", self.name_input)
+        layout.addRow("Vendor:", self.vendor_input)
+        layout.addRow("Model:", self.model_input)
+        layout.addRow("Version:", self.version_input)
+        layout.addRow("Description:", self.description_input)
+        
+        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.save_device)
+        buttons.rejected.connect(self.reject)
+        layout.addRow(buttons)
+        
+        self.setLayout(layout)
+        self.load_device()
+    
+    def load_device(self):
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, vendor, model, version, description FROM devices WHERE mac = ?", (self.device_mac,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            self.name_input.setText(result[0] or "")
+            self.vendor_input.setText(result[1] or "")
+            self.model_input.setText(result[2] or "")
+            self.version_input.setText(result[3] or "")
+            self.description_input.setText(result[4] or "")
+    
+    def save_device(self):
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE devices SET name=?, vendor=?, model=?, version=?, description=?
+            WHERE mac=?
+        """, (
+            self.name_input.text(),
+            self.vendor_input.text(),
+            self.model_input.text(),
+            self.version_input.text(),
+            self.description_input.text(),
+            self.device_mac
+        ))
+        conn.commit()
+        conn.close()
+        self.accept()
 
 class ScanWorker(QThread):
     finished = pyqtSignal(list)
@@ -33,6 +97,7 @@ class DevicesTab(QWidget):
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["IP Address", "MAC Address", "Vendor", "Last Seen"])
         self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.doubleClicked.connect(self.edit_device)
         layout.addWidget(self.table)
         
         self.setLayout(layout)
@@ -58,6 +123,13 @@ class DevicesTab(QWidget):
             self.table.setItem(row, 3, QTableWidgetItem(device["last_seen"]))
         self.scan_button.setText("Scan Network")
         self.scan_button.setEnabled(True)
+        
+    def edit_device(self, index):
+        row = index.row()
+        mac = self.table.item(row, 1)
+        if mac:
+            dialog = EditDeviceDialog(mac.text(), self)
+            dialog.exec_()    
             
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
