@@ -87,6 +87,7 @@ class LogsTab(QWidget):
             self.table.setItem(row, 2, QTableWidgetItem(str(round(record[2], 2))))
         
         self.status_label.setText(f"Status: {len(records)} records found")
+        self.show_graph()
     
     def delete_records(self):
         conn = sqlite3.connect(DB_PATH)
