@@ -1,6 +1,11 @@
 from scapy.all import ARP , Ether , srp
 import datetime
 import requests
+import sqlite3
+import os
+
+
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
 
 def scan_networks(network="172.20.10.0/28"):
     """Scans the specified networks and returns a list of active devices."""
@@ -22,6 +27,7 @@ def scan_networks(network="172.20.10.0/28"):
             
         }
         devices.append(device)
+        save_device(device)
         
     return devices
 def get_vendor(mac):
@@ -34,6 +40,18 @@ def get_vendor(mac):
         return "Unknown"
     except :
         return "Unknown"
+    
+def save_device(device):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        INSERT OR REPLACE INTO devices (ip, mac, vendor, last_seen)
+        VALUES (?, ?, ?, ?)
+    """, (device["ip"], device["mac"], device["vendor"], device["last_seen"]))
+    
+    conn.commit()
+    conn.close()    
     
 if __name__ == "__main__":
     devices = scan_networks()
