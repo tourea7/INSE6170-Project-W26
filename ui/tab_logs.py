@@ -42,6 +42,10 @@ class LogsTab(QWidget):
         layout.addLayout(btn_layout)
     
         self.table = QTableWidget()
+        self.table.setMinimumHeight(150)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setColumnWidth(0, 180)
+        self.table.setColumnWidth(1, 180)
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["Device MAC", "Timestamp", "Data Rate (KB/s)"])
         self.table.horizontalHeader().setStretchLastSection(True)
