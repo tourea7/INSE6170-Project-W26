@@ -4,6 +4,7 @@ import smtplib
 import threading
 from email.mime.text import MIMEText
 from scapy.all import sniff, wrpcap
+import sqlite3
 import os
 
 monitoring = False
@@ -61,6 +62,15 @@ def monitor_device(device_ip, device_mac, max_rate, n_minutes=5):
     
     while monitoring:
         current_rate = get_bandwitdh(device_ip)
+        # Save to database
+        conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db'))
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO bandwidth_history (device_mac, timestamp, data_rate)
+            VALUES (?, datetime('now'), ?)
+        """, (device_mac, current_rate))
+        conn.commit()
+        conn.close()
         print(f"{device_ip}: {current_rate:.2f} KB/s")
         
         if current_rate > max_rate:
