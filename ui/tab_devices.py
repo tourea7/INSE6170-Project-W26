@@ -124,6 +124,8 @@ class DevicesTab(QWidget):
             self.table.setItem(row, 4, QTableWidgetItem(device["last_seen"]))
         self.scan_button.setText("Scan Network")
         self.scan_button.setEnabled(True)
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.clicked.connect(self.select_device)
         
     def edit_device(self, index):
         row = index.row()
@@ -131,6 +133,21 @@ class DevicesTab(QWidget):
         if mac:
             dialog = EditDeviceDialog(mac.text(), self)
             dialog.exec_()    
+            
+    def select_device(self, index):
+        row = index.row()
+        mac = self.table.item(row, 2)
+        ip = self.table.item(row, 0)
+        if mac and ip:
+            self.selected_mac = mac.text()
+            self.selected_ip = ip.text()
+            # Try to find main window
+            widget = self
+            while widget is not None:
+                if hasattr(widget, 'on_device_selected'):
+                    widget.on_device_selected(mac.text(), ip.text())
+                    break
+                widget = widget.parent()
             
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication

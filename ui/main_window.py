@@ -99,7 +99,17 @@ class MainWindow(QMainWindow):
         if devices is not None:
             self.card_devices.value_label.setText(str(len(devices)))
         self.card_alerts.value_label.setText(str(alerts))
-        self.card_firewall.value_label.setText(str(rules))    
+        self.card_firewall.value_label.setText(str(rules))
+        
+    def on_device_selected(self, mac, ip):
+        self.tab_capture.mac_input.setText(mac)
+        
+
+        self.tab_ips.mac_input.setText(mac)
+        self.tab_ips.ip_input.setText(ip)
+        
+        
+        self.tab_firewall.mac_input.setText(mac)        
 
 
 if __name__ == "__main__":
