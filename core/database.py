@@ -69,6 +69,18 @@ def init_db():
     conn.close()
     print("Database initialized successfully.")
     
+def delete_old_records(days=30):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        DELETE FROM bandwidth_history 
+        WHERE timestamp < datetime('now', ?)
+    """, (f'-{days} days',))
+    conn.commit()
+    conn.close()
+    print(f"Old records deleted (older than {days} days)")  
+    
+      
 if __name__ == "__main__":
      init_db()  
      
