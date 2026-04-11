@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QLabel, QSpinBox
+from PyQt5.QtWidgets import QLineEdit, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QLabel, QSpinBox
 from PyQt5.QtCore import Qt
 import sys
 import matplotlib.pyplot as plt
@@ -26,6 +26,14 @@ class LogsTab(QWidget):
         title = QLabel("Logs and History")
         title.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;")
         layout.addWidget(title)
+        
+        # Filter by device
+        filter_layout = QHBoxLayout()
+        filter_layout.addWidget(QLabel("Device MAC (optional):"))
+        self.mac_filter_input = QLineEdit()
+        self.mac_filter_input.setPlaceholderText("Leave empty for all devices")
+        filter_layout.addWidget(self.mac_filter_input)
+        layout.addLayout(filter_layout)
         
         # Days input
         days_layout = QHBoxLayout()
@@ -111,18 +119,30 @@ class LogsTab(QWidget):
         main_layout.addWidget(scroll)
         self.setLayout(main_layout)
         
+        
+        
     def load_history(self):
         days = self.days_input.value()
+        mac_filter = self.mac_filter_input.text()
         
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        cursor.execute("""
-            SELECT device_mac, timestamp, data_rate 
-            FROM bandwidth_history 
-            WHERE timestamp >= datetime('now', ?)
-            ORDER BY timestamp DESC
-        """, (f'-{days} days',))
+        if mac_filter:
+            cursor.execute("""
+                SELECT device_mac, timestamp, data_rate 
+                FROM bandwidth_history 
+                WHERE timestamp >= datetime('now', ?)
+                AND device_mac = ?
+                ORDER BY timestamp DESC
+            """, (f'-{days} days', mac_filter))
+        else:
+            cursor.execute("""
+                SELECT device_mac, timestamp, data_rate 
+                FROM bandwidth_history 
+                WHERE timestamp >= datetime('now', ?)
+                ORDER BY timestamp DESC
+            """, (f'-{days} days',))
         
         records = cursor.fetchall()
         conn.close()
@@ -149,15 +169,26 @@ class LogsTab(QWidget):
         
     def show_graph(self):
         days = self.days_input.value()
+        mac_filter = self.mac_filter_input.text()
         
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT timestamp, data_rate 
-            FROM bandwidth_history 
-            WHERE timestamp >= datetime('now', ?)
-            ORDER BY timestamp ASC
-        """, (f'-{days} days',))
+        
+        if mac_filter:
+            cursor.execute("""
+                SELECT timestamp, data_rate 
+                FROM bandwidth_history 
+                WHERE timestamp >= datetime('now', ?)
+                AND device_mac = ?
+                ORDER BY timestamp ASC
+            """, (f'-{days} days', mac_filter))
+        else:
+            cursor.execute("""
+                SELECT timestamp, data_rate 
+                FROM bandwidth_history 
+                WHERE timestamp >= datetime('now', ?)
+                ORDER BY timestamp ASC
+            """, (f'-{days} days',))
         
         records = cursor.fetchall()
         conn.close()
@@ -166,13 +197,12 @@ class LogsTab(QWidget):
             self.status_label.setText("Status: No data to display")
             return
         
-        timestamps = [r[0] for r in records]
         rates = [r[1] for r in records]
         
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         ax.plot(rates, color='blue', linewidth=1.5)
-        ax.set_title("Bandwidth History")
+        ax.set_title(f"Bandwidth History {f'- {mac_filter}' if mac_filter else '- All Devices'}")
         ax.set_ylabel("Data Rate (KB/s)")
         ax.set_xlabel("Time")
         ax.grid(True)
