@@ -11,6 +11,21 @@ import subprocess
 monitoring = False
 alert_email = "angelkssi1@gmail.com"
 
+def get_min_rate(device_mac):
+    """Get minimum data rate for a device from database"""
+    try:
+        DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT min_rate FROM devices WHERE mac = ?", (device_mac,))
+        result = cursor.fetchone()
+        conn.close()
+        if result and result[0]:
+            return result[0]
+        return 10
+    except:
+        return 10
+
 def get_bandwitdh (device_ip):
     
 
@@ -59,7 +74,6 @@ def log_traffic(device_mac):
 def throttle_device(device_ip, min_rate, n_minutes):
     print(f"Throttling {device_ip} to {min_rate} KB/s for {n_minutes} minutes...")
     try:
-        # Add Windows firewall rule to throttle
         subprocess.run([
             "netsh", "advfirewall", "firewall", "add", "rule",
             f"name=throttle_{device_ip}",
@@ -70,11 +84,9 @@ def throttle_device(device_ip, min_rate, n_minutes):
         ], capture_output=True)
         
         print(f"Device {device_ip} throttled for {n_minutes} minutes")
-        
-        # Wait n minutes then remove rule
+    
         time.sleep(n_minutes * 60)
         
-        # Remove throttle rule
         subprocess.run([
             "netsh", "advfirewall", "firewall", "delete", "rule",
             f"name=throttle_{device_ip}"
@@ -107,9 +119,10 @@ def monitor_device(device_ip, device_mac, max_rate, n_minutes=5):
             log_traffic(device_mac)
             send_alert(device_ip, current_rate)
             
+            min_rate = get_min_rate(device_mac)
             throttle_thread = threading.Thread(
                 target=throttle_device,
-                args=(device_ip, 10, n_minutes)
+                args=(device_ip, min_rate, n_minutes)
             )
             throttle_thread.daemon = True
             throttle_thread.start()

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QLabel, QLineEdit
+from PyQt5.QtWidgets import QSpinBox, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QLabel, QLineEdit
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtWidgets import QDialog, QFormLayout, QDialogButtonBox
 import sys
@@ -23,6 +23,11 @@ class EditDeviceDialog(QDialog):
         self.model_input = QLineEdit()
         self.version_input = QLineEdit()
         self.description_input = QLineEdit()
+        self.min_rate_input = QSpinBox()
+        self.min_rate_input.setMinimum(1)
+        self.min_rate_input.setMaximum(10000)
+        self.min_rate_input.setValue(10)
+        layout.addRow("Min Rate (KB/s):", self.min_rate_input)
         
         layout.addRow("Name:", self.name_input)
         layout.addRow("Vendor:", self.vendor_input)
@@ -41,7 +46,7 @@ class EditDeviceDialog(QDialog):
     def load_device(self):
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT name, vendor, model, version, description FROM devices WHERE mac = ?", (self.device_mac,))
+        cursor.execute("SELECT name, vendor, model, version, description, min_rate FROM devices WHERE mac = ?", (self.device_mac,))
         result = cursor.fetchone()
         conn.close()
         
@@ -51,12 +56,13 @@ class EditDeviceDialog(QDialog):
             self.model_input.setText(result[2] or "")
             self.version_input.setText(result[3] or "")
             self.description_input.setText(result[4] or "")
+            self.min_rate_input.setValue(int(result[5]) if result[5] else 10)
     
     def save_device(self):
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("""
-            UPDATE devices SET name=?, vendor=?, model=?, version=?, description=?
+            UPDATE devices SET name=?, vendor=?, model=?, version=?, description=?, min_rate=?
             WHERE mac=?
         """, (
             self.name_input.text(),
@@ -64,6 +70,7 @@ class EditDeviceDialog(QDialog):
             self.model_input.text(),
             self.version_input.text(),
             self.description_input.text(),
+            self.min_rate_input.value(),
             self.device_mac
         ))
         conn.commit()
