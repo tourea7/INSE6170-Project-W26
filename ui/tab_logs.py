@@ -43,8 +43,11 @@ class LogsTab(QWidget):
         self.load_button.clicked.connect(self.load_history)
         self.delete_button = QPushButton("Delete All Records")
         self.delete_button.clicked.connect(self.delete_records)
+        self.delete_selected_button = QPushButton("Delete Selected")
+        self.delete_selected_button.clicked.connect(self.delete_selected_record)
         btn_layout.addWidget(self.load_button)
         btn_layout.addWidget(self.delete_button)
+        btn_layout.addWidget(self.delete_selected_button)
         layout.addLayout(btn_layout)
         
         # History table
@@ -206,6 +209,28 @@ class LogsTab(QWidget):
             os.remove(filepath)
             self.pcap_table.removeRow(selected)
             self.status_label.setText(f"Status: {filename} deleted")
+
+    def delete_selected_record(self):
+        selected = self.table.currentRow()
+        if selected < 0:
+            self.status_label.setText("Status: Please select a record to delete")
+            return
+        
+        mac = self.table.item(selected, 0).text()
+        timestamp = self.table.item(selected, 1).text()
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            DELETE FROM bandwidth_history 
+            WHERE device_mac = ? AND timestamp = ?
+        """, (mac, timestamp))
+        conn.commit()
+        conn.close()
+        
+        self.table.removeRow(selected)
+        self.status_label.setText(f"Status: Record deleted")
+        
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
