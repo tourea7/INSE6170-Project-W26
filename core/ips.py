@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 from scapy.all import sniff, wrpcap
 import sqlite3
 import os
+import subprocess
 
 monitoring = False
 alert_email = "angelkssi1@gmail.com"
@@ -34,7 +35,7 @@ def send_alert(device_ip, current_rate):
         
         server = smtplib.SMTP('smtp.gmail.com' , 587)
         server.starttls()
-        server.login(alert_email, "APP_PASSWORDS")
+        server.login(alert_email, "qvya vqgp wrjy lmkt")
         server.send_message(msg)
         server.quit()
         print(f"Alert email sent for {device_ip}")
@@ -55,6 +56,34 @@ def log_traffic(device_mac):
     print(f"Traffic logged: {filepath}")
     return filepath        
           
+def throttle_device(device_ip, min_rate, n_minutes):
+    print(f"Throttling {device_ip} to {min_rate} KB/s for {n_minutes} minutes...")
+    try:
+        # Add Windows firewall rule to throttle
+        subprocess.run([
+            "netsh", "advfirewall", "firewall", "add", "rule",
+            f"name=throttle_{device_ip}",
+            "protocol=TCP",
+            "dir=in",
+            f"remoteip={device_ip}",
+            "action=block"
+        ], capture_output=True)
+        
+        print(f"Device {device_ip} throttled for {n_minutes} minutes")
+        
+        # Wait n minutes then remove rule
+        time.sleep(n_minutes * 60)
+        
+        # Remove throttle rule
+        subprocess.run([
+            "netsh", "advfirewall", "firewall", "delete", "rule",
+            f"name=throttle_{device_ip}"
+        ], capture_output=True)
+        
+        print(f"Throttle removed for {device_ip}")
+        
+    except Exception as e:
+        print(f"Throttle error: {e}")          
           
           
 def monitor_device(device_ip, device_mac, max_rate, n_minutes=5):
@@ -77,6 +106,13 @@ def monitor_device(device_ip, device_mac, max_rate, n_minutes=5):
             print(f"Alert : Abnormal traffic on {device_ip}")
             log_traffic(device_mac)
             send_alert(device_ip, current_rate)
+            
+            throttle_thread = threading.Thread(
+                target=throttle_device,
+                args=(device_ip, 10, n_minutes)
+            )
+            throttle_thread.daemon = True
+            throttle_thread.start()
             
             time.sleep(1)
             
