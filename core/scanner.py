@@ -3,6 +3,7 @@ import datetime
 import requests
 import sqlite3
 import os
+import subprocess
 
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
@@ -40,6 +41,23 @@ def get_vendor(mac):
         return "Unknown"
     except :
         return "Unknown"
+    
+def get_ipv6(ip):
+    """Get IPv6 address of a device using ping6"""
+    try:
+        result = subprocess.run(
+            ["ping", "-6", "-n", "1", ip],
+            capture_output=True, text=True, timeout=3
+        )
+        for line in result.stdout.split('\n'):
+            if 'Reply from' in line:
+                parts = line.split()
+                for part in parts:
+                    if ':' in part and part.count(':') > 1:
+                        return part.rstrip(':')
+        return "N/A"
+    except:
+        return "N/A"
     
 def save_device(device):
     conn = sqlite3.connect(DB_PATH)

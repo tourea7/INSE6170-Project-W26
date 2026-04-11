@@ -94,8 +94,8 @@ class DevicesTab(QWidget):
         layout.addWidget(self.scan_button)
         
         self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["IP Address", "MAC Address", "Vendor", "Last Seen"])
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["IP Address", "IPv6", "MAC Address", "Vendor", "Last Seen"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.doubleClicked.connect(self.edit_device)
         layout.addWidget(self.table)
@@ -118,9 +118,10 @@ class DevicesTab(QWidget):
         self.table.setRowCount(len(devices))
         for row, device in enumerate(devices):
             self.table.setItem(row, 0, QTableWidgetItem(device["ip"]))
-            self.table.setItem(row, 1, QTableWidgetItem(device["mac"]))
-            self.table.setItem(row, 2, QTableWidgetItem(device["vendor"]))
-            self.table.setItem(row, 3, QTableWidgetItem(device["last_seen"]))
+            self.table.setItem(row, 1, QTableWidgetItem(device.get("ipv6", "N/A")))
+            self.table.setItem(row, 2, QTableWidgetItem(device["mac"]))
+            self.table.setItem(row, 3, QTableWidgetItem(device["vendor"]))
+            self.table.setItem(row, 4, QTableWidgetItem(device["last_seen"]))
         self.scan_button.setText("Scan Network")
         self.scan_button.setEnabled(True)
         
