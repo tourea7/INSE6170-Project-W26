@@ -1,6 +1,7 @@
 from scapy.all import sniff, IP, TCP, UDP
 import sqlite3
 import os
+import subprocess
 
 DB_PATH = os.path.join(os.path.dirname(__file__),'..', 'data', 'devices.db')
 
@@ -43,7 +44,47 @@ def add_rule(device_mac, allowed_ip, allowed_port, protocol="TCP"):
     conn.close()
     print(f"Rule added: {device_mac} -> {allowed_ip}:{allowed_port} ({protocol})")
     
+ 
+def apply_firewall_rules(device_mac):
+    """Apply whitelist rules using Windows Firewall"""
+    rules = get_rules(device_mac)
     
+    # First block all traffic from this device
+    subprocess.run([
+        "netsh", "advfirewall", "firewall", "add", "rule",
+        f"name=block_all_{device_mac.replace(':', '-')}",
+        "protocol=TCP",
+        "dir=in",
+        "action=block",
+        "enable=yes"
+    ], capture_output=True)
+    
+    # Then allow only whitelisted traffic
+    for rule in rules:
+        allowed_ip, allowed_port, protocol = rule
+        subprocess.run([
+            "netsh", "advfirewall", "firewall", "add", "rule",
+            f"name=allow_{device_mac.replace(':', '-')}_{allowed_ip}_{allowed_port}",
+            f"protocol={protocol}",
+            "dir=in",
+            f"remoteip={allowed_ip}",
+            f"localport={allowed_port}",
+            "action=allow",
+            "enable=yes"
+        ], capture_output=True)
+        print(f"Rule applied: allow {allowed_ip}:{allowed_port} ({protocol})")
+    
+    print(f"Firewall rules applied for {device_mac}")
+
+def remove_firewall_rules(device_mac):
+    """Remove all firewall rules for a device"""
+    subprocess.run([
+        "netsh", "advfirewall", "firewall", "delete", "rule",
+        f"name=block_all_{device_mac.replace(':', '-')}"
+    ], capture_output=True)
+    print(f"Firewall rules removed for {device_mac}")
+    
+        
 def start_firewall(device_mac):
         print(f"Firewall started for {device_mac}...")
         rules = get_rules(device_mac)

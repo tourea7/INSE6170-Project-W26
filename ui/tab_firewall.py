@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTab
 from PyQt5.QtCore import Qt
 import sys
 import os
+from core.firewall import add_rule, get_rules, apply_firewall_rules, remove_firewall_rules
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from core.firewall import add_rule, get_rules
@@ -41,14 +42,21 @@ class FirewallTab(QWidget):
         port_layout.addWidget(self.port_input)
         layout.addLayout(port_layout)
         
+        
         btn_layout = QHBoxLayout()
         self.add_button = QPushButton("Add Rule")
         self.add_button.clicked.connect(self.add_rule)
         self.load_button = QPushButton("Load Rules")
         self.load_button.clicked.connect(self.load_rules)
+        self.apply_button = QPushButton("Apply Firewall")
+        self.apply_button.clicked.connect(self.apply_rules)
+        self.remove_button = QPushButton("Remove Firewall")
+        self.remove_button.clicked.connect(self.remove_rules)
         btn_layout.addWidget(self.add_button)
         btn_layout.addWidget(self.load_button)
-        layout.addWidget(self.add_button)
+        btn_layout.addWidget(self.apply_button)
+        btn_layout.addWidget(self.remove_button)
+        layout.addLayout(btn_layout)
         
         self.table = QTableWidget()
         self.table.setColumnCount(4)
@@ -92,7 +100,22 @@ class FirewallTab(QWidget):
             
         self.status_label.setText(f"Status: {len(rules)} rules loaded")
         
-        
+    def apply_rules(self):
+        mac = self.mac_input.text()
+        if not mac:
+            self.status_label.setText("Status: Please enter MAC address")
+            return
+        apply_firewall_rules(mac)
+        self.status_label.setText(f"Status: Firewall rules applied for {mac}")
+    
+    def remove_rules(self):
+        mac = self.mac_input.text()
+        if not mac:
+            self.status_label.setText("Status: Please enter MAC address")
+            return
+        remove_firewall_rules(mac)
+        self.status_label.setText(f"Status: Firewall rules removed for {mac}")    
+
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
