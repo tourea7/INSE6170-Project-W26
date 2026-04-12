@@ -147,15 +147,14 @@ class MainWindow(QMainWindow):
         try:
             import sqlite3
             import os
+            import psutil
             db_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
             
-            # Firewall rules count
             cursor.execute("SELECT COUNT(*) FROM firewall_rules")
             self.card_firewall.value_label.setText(str(cursor.fetchone()[0]))
             
-            # Active alerts count
             cursor.execute("SELECT COUNT(*) FROM alerts WHERE timestamp >= datetime('now', '-1 day')")
             alert_count = cursor.fetchone()[0]
             self.card_alerts.value_label.setText(str(alert_count))
@@ -167,9 +166,19 @@ class MainWindow(QMainWindow):
                     "border-left: 4px solid #e74c3c;"
                     "}"
                 )
+            
+            net = psutil.net_io_counters()
+            total_bytes = net.bytes_sent + net.bytes_recv
+            if total_bytes > 1024 * 1024 * 1024:
+                self.card_traffic.value_label.setText(f"{total_bytes / (1024**3):.1f} GB")
+            elif total_bytes > 1024 * 1024:
+                self.card_traffic.value_label.setText(f"{total_bytes / (1024**2):.1f} MB")
+            else:
+                self.card_traffic.value_label.setText(f"{total_bytes / 1024:.1f} KB")
+            
             conn.close()
         except:
-            pass       
+            pass
 
 
 if __name__ == "__main__":
