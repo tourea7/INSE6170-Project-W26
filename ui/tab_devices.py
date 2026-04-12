@@ -136,6 +136,13 @@ class DevicesTab(QWidget):
         self.scan_button.setEnabled(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.clicked.connect(self.select_device)
+        # Update stats cards
+        widget = self
+        while widget is not None:
+            if hasattr(widget, 'update_stats'):
+                widget.update_stats(devices=devices)
+                break
+            widget = widget.parent()
         
     def edit_device(self, index):
         row = index.row()

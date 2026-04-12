@@ -116,6 +116,15 @@ def monitor_device(device_ip, device_mac, max_rate, n_minutes=5):
         
         if current_rate > max_rate:
             print(f"Alert : Abnormal traffic on {device_ip}")
+            # Save alert to database
+            alert_conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db'))
+            alert_cursor = alert_conn.cursor()
+            alert_cursor.execute("""
+                INSERT INTO alerts (device_ip, device_mac, timestamp, data_rate)
+                VALUES (?, ?, datetime('now'), ?)
+            """, (device_ip, device_mac, current_rate))
+            alert_conn.commit()
+            alert_conn.close()
             log_traffic(device_mac)
             send_alert(device_ip, current_rate)
             

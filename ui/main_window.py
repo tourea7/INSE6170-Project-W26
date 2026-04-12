@@ -94,12 +94,44 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.tabs)
         central.setLayout(main_layout)
         self.setCentralWidget(central)
+        from PyQt5.QtCore import QTimer
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.refresh_stats)
+        self.timer.start(5000)
      
     def update_stats(self, devices=None, alerts=0, rules=0):
         if devices is not None:
             self.card_devices.value_label.setText(str(len(devices)))
-        self.card_alerts.value_label.setText(str(alerts))
-        self.card_firewall.value_label.setText(str(rules))
+        
+        # Count firewall rules
+        try:
+            import sqlite3
+            import os
+            db_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM firewall_rules")
+            rule_count = cursor.fetchone()[0]
+            conn.close()
+            self.card_firewall.value_label.setText(str(rule_count))
+        except:
+            pass
+        # Count active alerts
+        try:
+            cursor.execute("SELECT COUNT(*) FROM alerts WHERE timestamp >= datetime('now', '-1 day')")
+            alert_count = cursor.fetchone()[0]
+            conn.close()
+            self.card_alerts.value_label.setText(str(alert_count))
+            if alert_count > 0:
+                self.card_alerts.setStyleSheet(
+                    "QFrame#statcard {"
+                    "background-color: #fde8e8;"
+                    "border-radius: 8px;"
+                    "border-left: 4px solid #e74c3c;"
+                    "}"
+                )
+        except:
+            pass
         
     def on_device_selected(self, mac, ip):
         self.tab_capture.mac_input.setText(mac)
@@ -109,7 +141,35 @@ class MainWindow(QMainWindow):
         self.tab_ips.ip_input.setText(ip)
         
         
-        self.tab_firewall.mac_input.setText(mac)        
+        self.tab_firewall.mac_input.setText(mac)     
+        
+    def refresh_stats(self):
+        try:
+            import sqlite3
+            import os
+            db_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            # Firewall rules count
+            cursor.execute("SELECT COUNT(*) FROM firewall_rules")
+            self.card_firewall.value_label.setText(str(cursor.fetchone()[0]))
+            
+            # Active alerts count
+            cursor.execute("SELECT COUNT(*) FROM alerts WHERE timestamp >= datetime('now', '-1 day')")
+            alert_count = cursor.fetchone()[0]
+            self.card_alerts.value_label.setText(str(alert_count))
+            if alert_count > 0:
+                self.card_alerts.setStyleSheet(
+                    "QFrame#statcard {"
+                    "background-color: #fde8e8;"
+                    "border-radius: 8px;"
+                    "border-left: 4px solid #e74c3c;"
+                    "}"
+                )
+            conn.close()
+        except:
+            pass       
 
 
 if __name__ == "__main__":

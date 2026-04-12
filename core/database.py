@@ -65,9 +65,19 @@ def init_db():
                        
                    )
                    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_ip TEXT,
+            device_mac TEXT,
+            timestamp TEXT,
+            data_rate REAL
+        )
+    ''')
     conn.commit()
     conn.close()
     print("Database initialized successfully.")
+    
     
 def delete_old_records(days=30):
     conn = get_connection()
