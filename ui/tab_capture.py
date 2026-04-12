@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QLabel, QSpinBox, QLineEdit
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import sys
 import os
 
@@ -87,27 +88,58 @@ class CaptureTab(QWidget):
         self.setLayout(layout)
         
     def start_capture(self):
-        mac = self.mac_input.text()
         filename = self.file_input.text()
         count = self.count_input.value()
         duration = self.duration_input.value()
         
-        if not mac or not filename:
-            self.status_label.setText("Status: Please enter MAC address and filename")
+        if not filename:
+            self.status_label.setText("Status: Please enter a filename")
             return
+        
+        # Get selected devices from devices tab
+        main = self
+        while main is not None:
+            if hasattr(main, 'tab_devices'):
+                break
+            main = main.parent()
+        
+        selected_devices = []
+        if main and hasattr(main, 'tab_devices'):
+            table = main.tab_devices.table
+            for row in range(table.rowCount()):
+                checkbox = table.item(row, 0)
+                if checkbox and checkbox.checkState() == Qt.Checked:
+                    mac = table.item(row, 3)
+                    if mac:
+                        selected_devices.append(mac.text())
+        
+        if not selected_devices:
+            # Use MAC from input field if no checkbox selected
+            mac = self.mac_input.text()
+            if not mac:
+                self.status_label.setText("Status: Please select devices or enter MAC")
+                return
+            selected_devices = [mac]
         
         self.start_button.setEnabled(False)
         self.pause_button.setEnabled(True)
         self.stop_button.setEnabled(True)
-        self.status_label.setText(f"Status: Capturing from {mac}...")
+        self.status_label.setText(f"Status: Capturing {len(selected_devices)} device(s)...")
         
-        self.thread = QThread()
-        self.worker = CaptureWorker(mac, filename, count, duration if duration > 0 else None)
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.on_capture_done)
-        self.worker.finished.connect(self.thread.quit)
-        self.thread.start()
+        # Start capture for each device
+        self.workers = []
+        self.threads = []
+        for i, mac in enumerate(selected_devices):
+            device_filename = f"{filename.replace('.pcap', '')}_{mac.replace(':', '-')}.pcap"
+            thread = QThread()
+            worker = CaptureWorker(mac, device_filename, count, duration if duration > 0 else None)
+            worker.moveToThread(thread)
+            thread.started.connect(worker.run)
+            worker.finished.connect(self.on_capture_done)
+            worker.finished.connect(thread.quit)
+            thread.start()
+            self.workers.append(worker)
+            self.threads.append(thread)
     
     def pause_capture(self):
         if self.pause_button.text() == "Pause":
