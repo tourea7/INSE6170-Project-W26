@@ -101,8 +101,8 @@ class DevicesTab(QWidget):
         layout.addWidget(self.scan_button)
         
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["IP Address", "IPv6", "MAC Address", "Vendor", "Last Seen"])
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels(["Select", "IP Address", "IPv6", "MAC Address", "Vendor", "Last Seen"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.doubleClicked.connect(self.edit_device)
         layout.addWidget(self.table)
@@ -124,11 +124,14 @@ class DevicesTab(QWidget):
     def on_scan_done(self, devices):
         self.table.setRowCount(len(devices))
         for row, device in enumerate(devices):
-            self.table.setItem(row, 0, QTableWidgetItem(device["ip"]))
-            self.table.setItem(row, 1, QTableWidgetItem(device.get("ipv6", "N/A")))
-            self.table.setItem(row, 2, QTableWidgetItem(device["mac"]))
-            self.table.setItem(row, 3, QTableWidgetItem(device["vendor"]))
-            self.table.setItem(row, 4, QTableWidgetItem(device["last_seen"]))
+            checkbox = QTableWidgetItem()
+            checkbox.setCheckState(Qt.Unchecked)
+            self.table.setItem(row, 0, checkbox)
+            self.table.setItem(row, 1, QTableWidgetItem(device["ip"]))
+            self.table.setItem(row, 2, QTableWidgetItem(device.get("ipv6", "N/A")))
+            self.table.setItem(row, 3, QTableWidgetItem(device["mac"]))
+            self.table.setItem(row, 4, QTableWidgetItem(device["vendor"]))
+            self.table.setItem(row, 5, QTableWidgetItem(device["last_seen"]))
         self.scan_button.setText("Scan Network")
         self.scan_button.setEnabled(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
@@ -143,8 +146,8 @@ class DevicesTab(QWidget):
             
     def select_device(self, index):
         row = index.row()
-        mac = self.table.item(row, 2)
-        ip = self.table.item(row, 0)
+        mac = self.table.item(row, 3)
+        ip = self.table.item(row, 1)
         if mac and ip:
             self.selected_mac = mac.text()
             self.selected_ip = ip.text()
