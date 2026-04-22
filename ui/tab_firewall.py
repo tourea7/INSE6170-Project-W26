@@ -7,7 +7,7 @@ from core.firewall import add_rule, get_rules, apply_firewall_rules, remove_fire
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from core.firewall import add_rule, get_rules
 
-class FirewallTab(QWidget):
+class FirewallTab(QWidget): #classe pour gérer les règles de pare-feu dans l'interface utilisateur
     def __init__(self):
         super().__init__()
         self.init_ui()

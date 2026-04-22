@@ -7,21 +7,26 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from core.capture import start_capture, stop, pause, resume
 
-class CaptureWorker(QThread):
+#la classe CaptureWorker est un QThread qui exécute la fonction start_capture dans un thread séparé pour éviter de bloquer l'interface utilisateur pendant la capture du trafic réseau. Elle émet un signal finished avec le chemin du fichier pcap une fois la capture terminée.
+class CaptureWorker(QThread): 
     finished = pyqtSignal(str)
     
-    def __init__(self, mac, filename, count, duration):
+    #fonction d'initialisation du worker qui prend en paramètre l'adresse MAC de l'appareil à capturer, le nom du fichier pcap, le nombre de paquets à capturer et la durée de la capture en secondes
+    def __init__(self, mac, filename, count, duration): 
         super().__init__()
         self.mac = mac
         self.filename = filename
         self.count = count
         self.duration = duration
     
+    #fonction qui exécute la capture en appelant la fonction start_capture avec les paramètres fournis et émet le signal finished avec le chemin du fichier pcap une fois la capture terminée
     def run(self):
         filepath = start_capture(self.mac, self.filename, self.count, self.duration)
         self.finished.emit(filepath)
 
+#la classe CaptureTab est un QWidget qui contient l'interface utilisateur pour la capture du trafic réseau. Elle permet à l'utilisateur de sélectionner les appareils à capturer, de spécifier le nom du fichier pcap, le nombre de paquets à capturer et la durée de la capture. Elle gère également les boutons de contrôle pour démarrer, mettre en pause et arrêter la capture.
 class CaptureTab(QWidget):
+    #fonction d'initialisation de la classe qui appelle la méthode init_ui pour configurer l'interface utilisateur
     def __init__(self):
         super().__init__()
         self.init_ui()
@@ -29,10 +34,12 @@ class CaptureTab(QWidget):
     def init_ui(self):
         layout = QVBoxLayout()
         
+        # Title
         title = QLabel("Packet Capture")
         title.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;")
         layout.addWidget(title)
         
+        # Input fields for MAC address, filename, packet count and duration
         mac_layout = QHBoxLayout()
         mac_layout.addWidget(QLabel("Device MAC Address:"))
         self.mac_input = QLineEdit()

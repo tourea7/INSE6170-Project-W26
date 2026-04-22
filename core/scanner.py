@@ -8,15 +8,15 @@ import subprocess
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
 
-def scan_networks(network="172.20.10.0/28"):
+def scan_networks(network="172.20.10.0/28"): #par défaut, on scanne un petit réseau local pour éviter les problèmes de temps d'attente et de permissions. Vous pouvez ajuster ce paramètre selon vos besoins.
     """Scans the specified networks and returns a list of active devices."""
     print(f"Scanning network: {network}...")
     
-    arp = ARP(pdst=network)
-    ether = Ether(dst="ff:ff:ff:ff:ff:ff")
+    arp = ARP(pdst=network) #crée un paquet ARP pour tout le réseau
+    ether = Ether(dst="ff:ff:ff:ff:ff:ff") # broadcast à tous les appareils
     packet = ether/arp
     
-    result = srp(packet, timeout=3, verbose=0)[0]
+    result = srp(packet, timeout=3, verbose=0)[0] #envoie et reçoit les réponses
     
     devices = []
     for sent, received in result:
@@ -31,7 +31,7 @@ def scan_networks(network="172.20.10.0/28"):
         save_device(device)
         
     return devices
-def get_vendor(mac):
+def get_vendor(mac): # fonction pour obtenir le fabricant à partir de l'adresse MAC en utilisant une API publique
     """Find te vendor of the device using its MAC address."""
     try:
         url = f"https://api.macvendors.com/{mac}"
@@ -42,7 +42,7 @@ def get_vendor(mac):
     except :
         return "Unknown"
     
-def get_ipv6(ip):
+def get_ipv6(ip): # fonction pour obtenir l'adresse IPv6 d'un appareil en utilisant ping6
     """Get IPv6 address of a device using ping6"""
     try:
         result = subprocess.run(
@@ -59,7 +59,7 @@ def get_ipv6(ip):
     except:
         return "N/A"
     
-def save_device(device):
+def save_device(device): #fonction pour sauvegarder les informations de l'appareil dans la base de données SQLite
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
@@ -71,7 +71,7 @@ def save_device(device):
     conn.commit()
     conn.close()    
     
-if __name__ == "__main__":
+if __name__ == "__main__": #test de la fonction de scan
     devices = scan_networks()
     print(f"\n{len(devices)} devices found:")
     for d in devices:

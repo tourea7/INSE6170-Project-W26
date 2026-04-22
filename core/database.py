@@ -4,7 +4,7 @@ import os
 #roote to database
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data' , 'devices.db')
 
-def get_connection():
+def get_connection(): 
     """Establishes a connection to the SQLITE database."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -65,7 +65,8 @@ def init_db():
                        
                    )
                    ''')
-    cursor.execute('''
+    # Alerts table
+    cursor.execute(''' 
         CREATE TABLE IF NOT EXISTS alerts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             device_ip TEXT,
@@ -78,7 +79,7 @@ def init_db():
     conn.close()
     print("Database initialized successfully.")
     
-    
+ # Function to delete old records from the bandwidth_history table (Function 4)   
 def delete_old_records(days=30):
     conn = get_connection()
     cursor = conn.cursor()

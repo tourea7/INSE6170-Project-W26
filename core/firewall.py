@@ -3,9 +3,9 @@ import sqlite3
 import os
 import subprocess
 
-DB_PATH = os.path.join(os.path.dirname(__file__),'..', 'data', 'devices.db')
+DB_PATH = os.path.join(os.path.dirname(__file__),'..', 'data', 'devices.db') # ajuster le chemin vers la base de données
 
-def get_rules(device_mac):
+def get_rules(device_mac): #recupere les regles de la base de données pour un appareil donné
     #connect to database
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -16,9 +16,9 @@ def get_rules(device_mac):
     
     conn.close()
     return rules
-
-def is_allowed(packet, rules):
-    #if no rules, block all traffic
+#verifie 3 chose pour chaque paquet capturé : si l'adresse IP de destination correspond à une adresse IP autorisée, si le port de destination correspond à un port autorisé et si le protocole correspond à un protocole autorisé. Si toutes les conditions sont remplies, le paquet est autorisé, sinon il est bloqué.
+    #if no rules, block all traffic clasic default deny security  
+def is_allowed(packet, rules): 
     if not rules:
         return False
     
@@ -32,7 +32,7 @@ def is_allowed(packet, rules):
                     return True
     return False
 
-def add_rule(device_mac, allowed_ip, allowed_port, protocol="TCP"):
+def add_rule(device_mac, allowed_ip, allowed_port, protocol="TCP"): #ajoute une règle à la base de données
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
@@ -44,8 +44,12 @@ def add_rule(device_mac, allowed_ip, allowed_port, protocol="TCP"):
     conn.close()
     print(f"Rule added: {device_mac} -> {allowed_ip}:{allowed_port} ({protocol})")
     
- 
-def apply_firewall_rules(device_mac):
+#applique les règles de la base de données en utilisant le pare-feu Windows en 
+# utilisnt nesh pour ajouter des règles de blocage et d'autorisation basées sur les règles définies 
+# pour l'appareil donné. D'abord, il bloque tout le trafic provenant de cet appareil,
+# puis il ajoute des règles spécifiques pour autoriser uniquement le trafic 
+# qui correspond aux règles de la base de données. 
+def apply_firewall_rules(device_mac): 
     """Apply whitelist rules using Windows Firewall"""
     rules = get_rules(device_mac)
     
@@ -78,20 +82,38 @@ def apply_firewall_rules(device_mac):
 
 def remove_firewall_rules(device_mac):
     """Remove all firewall rules for a device"""
+    # Remove block rule
     subprocess.run([
         "netsh", "advfirewall", "firewall", "delete", "rule",
         f"name=block_all_{device_mac.replace(':', '-')}"
     ], capture_output=True)
+    
+    # Remove all allow rules for this device
+    rules = get_rules(device_mac)
+    for rule in rules:
+        allowed_ip, allowed_port, protocol = rule
+        subprocess.run([
+            "netsh", "advfirewall", "firewall", "delete", "rule",
+            f"name=allow_{device_mac.replace(':', '-')}_{allowed_ip}_{allowed_port}"
+        ], capture_output=True)
+        
+     # Remove from SQLite database
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM firewall_rules WHERE device_mac = ?", (device_mac,))
+    conn.commit()
+    conn.close()
+    
     print(f"Firewall rules removed for {device_mac}")
     
         
-def start_firewall(device_mac):
+def start_firewall(device_mac): #démarre le pare-feu pour un appareil donné en écoutant le trafic réseau et en appliquant les règles
         print(f"Firewall started for {device_mac}...")
         rules = get_rules(device_mac)
         print(f"{len(rules)} rules loaded")
         
         
-        def process_packet(packet):
+        def process_packet(packet): #fonction de rappel pour traiter chaque paquet capturé
             if is_allowed(packet, rules):
                 print(f"ALLOWED: {packet.summary()}")
             else:

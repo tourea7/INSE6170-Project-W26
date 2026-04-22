@@ -146,7 +146,7 @@ class DevicesTab(QWidget):
         
     def edit_device(self, index):
         row = index.row()
-        mac = self.table.item(row, 1)
+        mac = self.table.item(row, 3)
         if mac:
             dialog = EditDeviceDialog(mac.text(), self)
             dialog.exec_()    

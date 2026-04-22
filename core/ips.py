@@ -6,12 +6,12 @@ from email.mime.text import MIMEText
 from scapy.all import sniff, wrpcap
 import sqlite3
 import os
-import subprocess
+import subprocess #Pour les commandes de throttling sur Windows
 
 monitoring = False
-alert_email = "angelkssi1@gmail.com"
-
-def get_min_rate(device_mac):
+alert_email = "angelkssi1@gmail.com" #Remplacez par votre adresse email pour recevoir les alertes
+#fonction pour récupérer le débit minimum d'un appareil à partir de la base de données
+def get_min_rate(device_mac): 
     """Get minimum data rate for a device from database"""
     try:
         DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
@@ -25,8 +25,8 @@ def get_min_rate(device_mac):
         return 10
     except:
         return 10
-
-def get_bandwitdh (device_ip):
+#fonction pour calculer le débit actuel d'un appareil en mesurant les octets envoyés et reçus sur une période de 1 seconde
+def get_bandwitdh (device_ip): 
     
 
     net1 = psutil.net_io_counters()
@@ -41,7 +41,8 @@ def get_bandwitdh (device_ip):
     total_kbps = (bytes_sent + bytes_recv) / 1024
     return total_kbps
 
-def send_alert(device_ip, current_rate):
+#fonction pour envoyer une alerte par email lorsque le débit d'un appareil dépasse le seuil défini
+def send_alert(device_ip, current_rate): 
     try:
         msg = MIMEText(f"Alert: Device {device_ip} is behaving abnormal. Current data rate : {current_rate:.2f} KB/s")
         msg['Subject'] = f"IPS Alert - Abnormal traffic detected on {device_ip}"
@@ -57,8 +58,8 @@ def send_alert(device_ip, current_rate):
         
     except Exception as e:
         print(f"Email error: {e}")
-        
-def log_traffic(device_mac):
+ #fonction pour capturer le trafic réseau d'un appareil pendant 10 secondes et le sauvegarder dans un fichier pcap       
+def log_traffic(device_mac): 
     print(f"Logging traffic for {device_mac} for 10 seconds...")
     pcap_folder = os.path.join(os.path.dirname(__file__), '..', 'data', 'pcap')
     os.makedirs(pcap_folder, exist_ok=True)
@@ -70,8 +71,8 @@ def log_traffic(device_mac):
     wrpcap(filepath, packets)
     print(f"Traffic logged: {filepath}")
     return filepath        
-          
-def throttle_device(device_ip, min_rate, n_minutes):
+ #fonction pour limiter le débit d'un appareil pendant une durée définie en utilisant les règles de pare-feu de Windows         
+def throttle_device(device_ip, min_rate, n_minutes): 
     print(f"Throttling {device_ip} to {min_rate} KB/s for {n_minutes} minutes...")
     try:
         subprocess.run([
@@ -98,7 +99,7 @@ def throttle_device(device_ip, min_rate, n_minutes):
         print(f"Throttle error: {e}")          
           
           
-def monitor_device(device_ip, device_mac, max_rate, n_minutes=5):
+def monitor_device(device_ip, device_mac, max_rate, n_minutes=5): #fonction pour surveiller le débit d'un appareil en continu et déclencher les actions d'alerte et de throttling si le débit dépasse le seuil défini
     print(f"Monitoring {device_ip} (max: {max_rate} KB/s) ...")
     
     while monitoring:
@@ -138,7 +139,7 @@ def monitor_device(device_ip, device_mac, max_rate, n_minutes=5):
             
             time.sleep(1)
             
-def start_monitoring(device_ip, device_mac, max_rate, n_minutes=5):
+def start_monitoring(device_ip, device_mac, max_rate, n_minutes=5): #fonction pour démarrer la surveillance d'un appareil en créant un thread dédié pour exécuter la fonction de surveillance
     global monitoring
     monitoring = True
     
