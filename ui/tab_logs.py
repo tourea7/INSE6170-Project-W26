@@ -23,8 +23,8 @@ class LogsTab(QWidget):
         layout = QVBoxLayout()
         
         # Title
-        title = QLabel("Logs and History")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;")
+        title = QLabel("📊  Logs and History")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; padding: 10px; color: #a78bfa;")
         layout.addWidget(title)
         
         # Filter by device

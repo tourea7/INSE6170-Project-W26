@@ -2,9 +2,56 @@ from scapy.all import sniff, IP, TCP, UDP
 import sqlite3
 import os
 import subprocess
+from scapy.all import sniff, IP, TCP, UDP, send, conf
+import threading
 
 DB_PATH = os.path.join(os.path.dirname(__file__),'..', 'data', 'devices.db') # ajuster le chemin vers la base de données
 
+firewall_running = False
+firewall_thread = None
+
+def packet_filter(packet):
+    """Intercept and filter packets based on whitelist rules"""
+    if IP in packet:
+        src_ip = packet[IP].src
+        dst_ip = packet[IP].dst
+        
+        # Get all rules from database
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT device_mac, allowed_ip, allowed_port, protocol FROM firewall_rules")
+        all_rules = cursor.fetchall()
+        conn.close()
+        
+        if not all_rules:
+            return
+        
+        # Check if packet matches any rule
+        for device_mac, allowed_ip, allowed_port, protocol in all_rules:
+            if dst_ip == allowed_ip:
+                if TCP in packet and packet[TCP].dport == allowed_port:
+                    print(f"ALLOWED: {src_ip} -> {dst_ip}:{allowed_port}")
+                    return
+                if UDP in packet and packet[UDP].dport == allowed_port:
+                    print(f"ALLOWED: {src_ip} -> {dst_ip}:{allowed_port}")
+                    return
+        
+        # Block packet
+        print(f"BLOCKED: {src_ip} -> {dst_ip}")
+
+def start_scapy_firewall():
+    """Start Scapy-based packet filtering"""
+    global firewall_running
+    firewall_running = True
+    print("Scapy firewall started...")
+    sniff(prn=packet_filter, store=0, stop_filter=lambda x: not firewall_running)
+
+def stop_scapy_firewall():
+    """Stop Scapy firewall"""
+    global firewall_running
+    firewall_running = False
+    print("Scapy firewall stopped")
+    
 def get_rules(device_mac): #recupere les regles de la base de données pour un appareil donné
     #connect to database
     conn = sqlite3.connect(DB_PATH)
@@ -55,13 +102,13 @@ def apply_firewall_rules(device_mac):
     
     # First block all traffic from this device
     subprocess.run([
-        "netsh", "advfirewall", "firewall", "add", "rule",
-        f"name=block_all_{device_mac.replace(':', '-')}",
-        "protocol=TCP",
-        "dir=in",
-        "action=block",
-        "enable=yes"
-    ], capture_output=True)
+    "netsh", "advfirewall", "firewall", "add", "rule",
+    f"name=block_all_{device_mac.replace(':', '-')}",
+    "protocol=any",
+    "dir=out",
+    "action=block",
+    "enable=yes"
+], capture_output=True)
     
     # Then allow only whitelisted traffic
     for rule in rules:

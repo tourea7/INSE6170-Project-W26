@@ -4,6 +4,8 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 import sys
 import os
 
+from matplotlib.pyplot import title
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from core.capture import start_capture, stop, pause, resume
 
@@ -35,8 +37,8 @@ class CaptureTab(QWidget):
         layout = QVBoxLayout()
         
         # Title
-        title = QLabel("Packet Capture")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;")
+        title = QLabel("📦  Packet Capture")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; padding: 10px; color: #a78bfa;")
         layout.addWidget(title)
         
         # Input fields for MAC address, filename, packet count and duration

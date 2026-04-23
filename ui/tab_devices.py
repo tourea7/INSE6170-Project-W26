@@ -92,11 +92,11 @@ class DevicesTab(QWidget):
     def init_ui(self):
         layout = QVBoxLayout()
         
-        title = QLabel("Connected IoT Devices")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;")
+        title = QLabel("🖥  Connected IoT Devices")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; padding: 10px; color: #a78bfa;")
         layout.addWidget(title)
         
-        self.scan_button = QPushButton(" Scan Network")    
+        self.scan_button = QPushButton("🔍 Scan Network")    
         self.scan_button.clicked.connect(self.scan_devices)
         layout.addWidget(self.scan_button)
         

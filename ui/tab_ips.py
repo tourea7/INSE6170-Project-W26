@@ -15,8 +15,8 @@ class IPSTab(QWidget):
         layout = QVBoxLayout()
         
     
-        title = QLabel("Intrusion Prevention System")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;")
+        title = QLabel("🚨  Intrusion Prevention System")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; padding: 10px; color: #a78bfa;")
         layout.addWidget(title)
         
         

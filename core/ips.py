@@ -98,8 +98,8 @@ def throttle_device(device_ip, min_rate, n_minutes):
     except Exception as e:
         print(f"Throttle error: {e}")          
           
-          
-def monitor_device(device_ip, device_mac, max_rate, n_minutes=5): #fonction pour surveiller le débit d'un appareil en continu et déclencher les actions d'alerte et de throttling si le débit dépasse le seuil défini
+     #fonction pour surveiller le débit d'un appareil en continu et déclencher les actions d'alerte et de throttling si le débit dépasse le seuil défini     
+def monitor_device(device_ip, device_mac, max_rate, n_minutes=5): 
     print(f"Monitoring {device_ip} (max: {max_rate} KB/s) ...")
     
     while monitoring:
@@ -138,8 +138,8 @@ def monitor_device(device_ip, device_mac, max_rate, n_minutes=5): #fonction pour
             throttle_thread.start()
             
             time.sleep(1)
-            
-def start_monitoring(device_ip, device_mac, max_rate, n_minutes=5): #fonction pour démarrer la surveillance d'un appareil en créant un thread dédié pour exécuter la fonction de surveillance
+  #fonction pour démarrer la surveillance d'un appareil en créant un thread dédié pour exécuter la fonction de surveillance          
+def start_monitoring(device_ip, device_mac, max_rate, n_minutes=5): 
     global monitoring
     monitoring = True
     

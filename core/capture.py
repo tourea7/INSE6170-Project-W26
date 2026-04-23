@@ -4,8 +4,8 @@ import datetime
 
 stop_capture = False
 pause_capture = False
-
-def start_capture(mac, filename, count=100, duration=None): #la fonction qui démarre la capture de paquets, prend en paramètre l'adresse MAC, le nom du fichier de sortie, le nombre de paquets à capturer et la durée de la capture
+#la fonction qui démarre la capture de paquets, prend en paramètre l'adresse MAC, le nom du fichier de sortie, le nombre de paquets à capturer et la durée de la capture
+def start_capture(mac, filename, count=100, duration=None): 
     global stop_capture, pause_capture
     stop_capture = False
     pause_capture = False
