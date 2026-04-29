@@ -8,21 +8,23 @@ import subprocess
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'devices.db')
 
-#par défaut, on scanne un petit réseau local pour éviter les problèmes de temps d'attente et de permissions. Vous pouvez ajuster ce paramètre selon vos besoins.
-def scan_networks(network="172.20.10.0/28"): 
+
+def scan_networks(network="192.168.1.0/24"):  # Change this to match your network range
+# Example: "192.168.1.0/24" or "172.20.10.0/28"
     """Scans the specified networks and returns a list of active devices."""
     print(f"Scanning network: {network}...")
     
-    arp = ARP(pdst=network) #crée un paquet ARP pour tout le réseau
-    ether = Ether(dst="ff:ff:ff:ff:ff:ff") # broadcast à tous les appareils
-    packet = ether/arp #combine les deux paquets pour créer un paquet complet à envoyer
-    result = srp(packet, timeout=3, verbose=0)[0] #envoie et reçoit les réponses
+    arp = ARP(pdst=network) 
+    ether = Ether(dst="ff:ff:ff:ff:ff:ff") 
+    packet = ether/arp 
+    result = srp(packet, timeout=5, retry=3, verbose=0)[0] 
     
     devices = []
     for sent, received in result:
         device = {
             "ip":received.psrc,
             "mac": received.hwsrc,
+            "ipv6": get_ipv6_from_mac(received.hwsrc),
             "vendor" : get_vendor(received.hwsrc),
             "last_seen": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
@@ -31,7 +33,7 @@ def scan_networks(network="172.20.10.0/28"):
         save_device(device)
         
     return devices
-def get_vendor(mac): # fonction pour obtenir le fabricant à partir de l'adresse MAC en utilisant une API publique
+def get_vendor(mac): 
     """Find te vendor of the device using its MAC address."""
     try:
         url = f"https://api.macvendors.com/{mac}"
@@ -42,24 +44,25 @@ def get_vendor(mac): # fonction pour obtenir le fabricant à partir de l'adresse
     except :
         return "Unknown"
     
-def get_ipv6(ip):
-    """Get IPv6 address using Windows arp/netsh command"""
+def get_ipv6_from_mac(mac):
     try:
         result = subprocess.run(
             ["netsh", "interface", "ipv6", "show", "neighbors"],
             capture_output=True, text=True, timeout=5
         )
+        mac_normalized = mac.lower().replace(":", "-")
+
         for line in result.stdout.split('\n'):
-            if ip in line and ':' in line:
+            if mac_normalized in line.lower():
                 parts = line.split()
                 for part in parts:
-                    if ':' in part and len(part) > 8:
+                    if ':' in part and len(part) > 6 and '-' not in part:
                         return part
         return "N/A"
     except:
         return "N/A"
     
-def save_device(device): #fonction pour sauvegarder les informations de l'appareil dans la base de données SQLite
+def save_device(device): 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
@@ -71,7 +74,7 @@ def save_device(device): #fonction pour sauvegarder les informations de l'appare
     conn.commit()
     conn.close()    
     
-if __name__ == "__main__": #test de la fonction de scan
+if __name__ == "__main__": 
     devices = scan_networks()
     print(f"\n{len(devices)} devices found:")
     for d in devices:
